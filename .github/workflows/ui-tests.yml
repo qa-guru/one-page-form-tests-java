@@ -1,0 +1,255 @@
+name: UI Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      ALLURE_JOB_RUN_ID:
+        description: "TestOps service parameter. Leave blank"
+        required: false
+      ALLURE_USERNAME:
+        description: "TestOps service parameter. Leave blank"
+        required: false
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  repository_dispatch:
+    types: [demo-updated]
+
+concurrency:
+  group: ui-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pages: write
+  pull-requests: write
+  checks: write
+
+env:
+  DEMO_REPO: qa-guru/one-page-form
+  DEMO_BASE_URL: https://qa-guru.github.io/one-page-form/
+
+jobs:
+  ui-tests:
+    name: UI Tests
+    runs-on: ubuntu-latest
+    env:
+      ALLURE_ENDPOINT: https://allure.autotests.cloud
+      ALLURE_PROJECT_ID: 5263
+      ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
+      ALLURE_JOB_RUN_ID: ${{ github.event.inputs.ALLURE_JOB_RUN_ID }}
+      ALLURE_RESULTS: build/allure-results
+      BROWSER_VERSION: '148'
+      REPORT_ID: ${{ github.run_id }}
+      ALLURE_RUNS_RETENTION: '10'
+
+    steps:
+      - name: Checkout tests repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Checkout demo pages
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ env.DEMO_REPO }}
+          ref: main
+          path: demo
+
+      - name: Resolve branch slug
+        run: |
+          BRANCH="${{ github.head_ref || github.ref_name }}"
+          BRANCH_SLUG=$(echo "$BRANCH" | sed 's/\//-/g')
+          echo "BRANCH_SLUG=${BRANCH_SLUG}" >> "$GITHUB_ENV"
+
+      - name: Load previous Allure history
+        uses: actions/checkout@v6
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+          sparse-checkout: allure-reports
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Cache Selenium browsers
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/selenium
+          key: selenium-${{ runner.os }}-chrome-${{ env.BROWSER_VERSION }}
+          restore-keys: |
+            selenium-${{ runner.os }}-chrome-
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: wrapper
+
+      - name: Cache Allure CLI
+        uses: actions/cache@v5
+        with:
+          path: build/allure
+          key: allure-${{ runner.os }}-${{ hashFiles('allurerc.json', 'build.gradle') }}
+          restore-keys: |
+            allure-${{ runner.os }}-
+
+      - name: Install allurectl
+        uses: allure-framework/setup-allurectl@v1
+
+      - name: Restore report trend history
+        run: |
+          HISTORY="gh-pages/allure-reports/${{ env.BRANCH_SLUG }}/history.jsonl"
+          if [ -f "$HISTORY" ]; then
+            cp "$HISTORY" history.jsonl
+          fi
+
+      - name: Run UI tests
+        run: |
+          set +e
+          allurectl watch -- ./gradlew test \
+            -Denv=ci \
+            -DbrowserVersion=${{ env.BROWSER_VERSION }} \
+            -DbaseUrl="file://${{ github.workspace }}/demo/"
+          echo "TEST_EXIT=$?" >> "$GITHUB_ENV"
+          set -e
+
+      - name: Generate Allure report
+        run: |
+          mkdir -p build/allure-results
+          cat > build/allure-results/executor.json <<EOF
+          {
+            "reportName": "Run #${{ github.run_number }}",
+            "buildOrder": ${{ github.run_number }},
+            "reportUrl": "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/allure-reports/${{ env.BRANCH_SLUG }}/${{ env.REPORT_ID }}/awesome/index.html",
+            "buildUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+          EOF
+
+          jq --arg environment "ci" \
+             --arg build "#${{ github.run_number }}" \
+             --arg branch "${{ github.head_ref || github.ref_name }}" \
+             --arg demoUrl "${{ env.DEMO_BASE_URL }}" \
+             'del(.plugins.csv)
+              | .plugins.awesome.options.charts |= .[0:3]
+              | .plugins.dashboard.options.layout |= .[0:4]
+              | .variables += {
+                  "Environment": $environment,
+                  "Build": $build,
+                  "Branch": $branch,
+                  "Demo": $demoUrl
+                }' allurerc.json > allurerc.ci.json
+          mv allurerc.ci.json allurerc.json
+
+          ./gradlew allureReport
+          build/allure/allure3/node_modules/.bin/allure quality-gate build/allure-results --config allurerc.json
+
+      - name: Assemble Allure site
+        if: always()
+        run: |
+          BRANCH_SLUG="${{ env.BRANCH_SLUG }}"
+          REPORT_ID="${{ env.REPORT_ID }}"
+          REPORT_DIR="pages/allure-reports/${BRANCH_SLUG}/${REPORT_ID}"
+          REPORT_SRC="build/reports/allure-report/allureReport"
+          DASHBOARD_SRC="${REPORT_SRC}/dashboard"
+          LANDING_DIR="pages/allure-reports/${BRANCH_SLUG}"
+
+          mkdir -p pages
+
+          if [ -d gh-pages ]; then
+            cp -a gh-pages/. pages/
+          fi
+
+          cp allure-shell.css pages/
+          cp allure-shell.js pages/
+          touch pages/.nojekyll
+
+          cat > pages/index.html <<'EOF'
+          <!DOCTYPE html>
+          <html lang="ru">
+          <head>
+            <meta charset="UTF-8">
+            <meta http-equiv="refresh" content="0;url=allure-reports/">
+            <title>UI Tests Reports</title>
+          </head>
+          <body>
+            <p><a href="allure-reports/">Allure reports</a></p>
+          </body>
+          </html>
+          EOF
+
+          mkdir -p "$REPORT_DIR"
+          cp -r "${REPORT_SRC}/." "$REPORT_DIR/"
+
+          mkdir -p "$LANDING_DIR"
+
+          if [ -f history.jsonl ]; then
+            cp history.jsonl "${LANDING_DIR}/history.jsonl"
+          fi
+
+          echo "${REPORT_ID}" > "${LANDING_DIR}/latest-run-id.txt"
+
+          if [ -d "$DASHBOARD_SRC" ]; then
+            rm -rf "${LANDING_DIR}/dashboard"
+            mkdir -p "${LANDING_DIR}/dashboard"
+            cp -r "${DASHBOARD_SRC}/." "${LANDING_DIR}/dashboard/"
+            find "${LANDING_DIR}" -maxdepth 1 -type f \
+              ! -name 'history.jsonl' \
+              ! -name 'latest-run-id.txt' \
+              -delete
+          fi
+
+          bash .github/scripts/optimize-allure-pages.sh pages/allure-reports "${{ env.ALLURE_RUNS_RETENTION }}"
+
+      - name: Generate overview dashboard
+        if: always()
+        run: bash .github/scripts/generate-allure-overview.sh pages/allure-reports
+
+      - name: Deploy Allure Report
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: pages
+          enable_jekyll: false
+
+      - name: Comment Allure results on PR
+        if: always() && github.event_name == 'pull_request'
+        uses: allure-framework/allure-action@v0.7.2
+        with:
+          report-directory: build/reports/allure-report/allureReport
+          remote-href: "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/allure-reports/${{ env.BRANCH_SLUG }}/${{ env.REPORT_ID }}/"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sections: |
+            new
+            flaky
+
+      - name: Add Allure links to job summary
+        if: always()
+        run: |
+          REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/allure-reports/${{ env.BRANCH_SLUG }}/${{ env.REPORT_ID }}/awesome/index.html"
+          BRANCH_DASHBOARD_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/allure-reports/${{ env.BRANCH_SLUG }}/"
+          GLOBAL_DASHBOARD_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/allure-reports/"
+
+          echo "::notice title=Allure Report::${REPORT_URL}"
+
+          {
+            echo "## Allure Report"
+            echo ""
+            echo "- Branch: \`${{ env.BRANCH_SLUG }}\`"
+            echo "- Demo: [${{ env.DEMO_BASE_URL }}](${{ env.DEMO_BASE_URL }})"
+            echo "- [Overview dashboard](${GLOBAL_DASHBOARD_URL})"
+            echo "- [Branch dashboard](${BRANCH_DASHBOARD_URL})"
+            echo "- [Run #${{ github.run_number }}](${REPORT_URL})"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail job if tests failed
+        if: always() && env.TEST_EXIT != '0'
+        run: exit "${{ env.TEST_EXIT }}"
