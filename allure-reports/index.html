@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UI Tests Dashboard</title>
+  <link rel="stylesheet" href="../allure-shell.css">
+</head>
+<body>
+  <div class="shell">
+    <div class="layout">
+      <header class="page-header">
+        <h1>UI Tests Dashboard</h1>
+        <p>Тренды по веткам. Для дерева тестов откройте полный отчёт.</p>
+      </header>
+
+      <p class="note">Dashboard показывает только аналитику. Чтобы кликнуть по тестам, откройте ссылку «полный отчёт» у нужной ветки.</p>
+
+      <section class="card branch-nav">
+        <div class="card-header">
+          <h2>Навигация</h2>
+        </div>
+        <div class="card-body">
+          <ul>
+            <li><a href="main/">main</a></li> <li><a href="main/28305084312/awesome/index.html">main — последний run</a></li>
+          </ul>
+        </div>
+      </section>
+
+      
+    <section class="card">
+      <div class="card-header">
+        <h2><a href="main/">main</a></h2>
+        <a class="report-link" href="main/28305084312/awesome/index.html">полный отчёт →</a>
+      </div>
+      <div class="card-body">
+        <iframe class="dashboard-frame" src="main/dashboard/index.html" title="Dashboard: main"></iframe>
+      </div>
+    </section>
+    </div>
+  </div>
+  <script src="../allure-shell.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UI Tests — main</title>
+  <link rel="stylesheet" href="../../allure-shell.css">
+</head>
+<body>
+  <div class="shell">
+    <div class="layout">
+      <header class="page-header">
+        <a class="back-link" href="../">← Все ветки</a>
+        <h1>main</h1>
+        <p>Dashboard — только тренды. Для дерева тестов откройте полный отчёт.</p>
+      </header>
+
+      <section class="card">
+        <div class="card-header">
+          <h2>Полный отчёт</h2>
+        </div>
+        <div class="card-body">
+          <p class="note">Из dashboard нельзя провалиться в тесты — используйте полный Allure Report.</p>
+          <div class="actions">
+            <a class="btn primary" href="28305084312/awesome/index.html">Открыть полный отчёт (последний прогон)</a>
+            <a class="btn secondary" href="../">Overview всех веток</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2>Прогоны</h2>
+        </div>
+        <div class="card-body">
+          <ul class="runs">
+            <li><a href="28305084312/awesome/index.html">Run 28305084312</a></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2>Trends</h2>
+        </div>
+        <div class="card-body">
+          <iframe class="dashboard-frame" src="dashboard/index.html" title="Dashboard"></iframe>
+        </div>
+      </section>
+    </div>
+  </div>
+  <script src="../../allure-shell.js"></script>
+</body>
+</html>
