@@ -1,0 +1,34 @@
+{
+  "name": "UI Tests",
+  "historyPath": "./history.jsonl",
+  "appendHistory": false,
+  "plugins": {
+    "dashboard": {
+      "options": {
+        "reportName": "Automated Tests Dashboard",
+        "reportLanguage": "en",
+        "layout": [
+          {
+            "type": "statusDynamics",
+            "title": "Status dynamics",
+            "limit": 20
+          },
+          {
+            "type": "durationDynamics",
+            "title": "Duration dynamics",
+            "limit": 20
+          },
+          {
+            "type": "currentStatus",
+            "title": "Current status"
+          },
+          {
+            "type": "statusTransitions",
+            "title": "Status transitions",
+            "limit": 20
+          }
+        ]
+      }
+    }
+  }
+}

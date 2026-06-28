@@ -224,6 +224,11 @@ jobs:
             rm -rf "${LANDING_DIR}/dashboard"
             mkdir -p "${LANDING_DIR}/dashboard"
             cp -r "${DASHBOARD_SRC}/." "${LANDING_DIR}/dashboard/"
+            rm -rf "${LANDING_DIR}/dashboard-en"
+            bash .github/scripts/generate-dashboard-en.sh \
+              "build/allure/allure3/node_modules/.bin/allure" \
+              "build/allure-results" \
+              "${LANDING_DIR}/dashboard-en"
             find "${LANDING_DIR}" -maxdepth 1 -type f \
               ! -name 'history.jsonl' \
               ! -name 'latest-run-id.txt' \

@@ -6,7 +6,7 @@ Tests use [Selenide](https://selenide.org/) and JUnit 5. Allure 3 reports are pu
 
 [![UI Tests](https://qa-guru.github.io/one-page-form-tests-java/readme/badge.svg)](https://qa-guru.github.io/one-page-form-tests-java/allure-reports/)
 
-## UI Tests Dashboard
+## Automated Tests Dashboard
 
 [![UI Tests stats](https://qa-guru.github.io/one-page-form-tests-java/readme/stats.svg)](https://qa-guru.github.io/one-page-form-tests-java/allure-reports/)
 

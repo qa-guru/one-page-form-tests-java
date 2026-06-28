@@ -76,7 +76,7 @@
     },
     "dashboard": {
       "options": {
-        "reportName": "UI Tests Dashboard",
+        "reportName": "Automated Tests Dashboard",
         "reportLanguage": "ru",
         "layout": [
           {

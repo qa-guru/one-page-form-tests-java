@@ -17,10 +17,12 @@ for branch_dir in "${ALLURE_ROOT}"/*/; do
   slug="$(basename "${branch_dir}")"
   is_reserved_allure_dir "${slug}" && continue
 
-  if [ -d "${branch_dir}/dashboard" ]; then
-    bash "${SCRIPT_DIR}/optimize-allure-plugin.sh" \
-      "${branch_dir}/dashboard" "${STATIC_ROOT}/dashboard"
-  fi
+  for dashboard_name in dashboard dashboard-en; do
+    if [ -d "${branch_dir}/${dashboard_name}" ]; then
+      bash "${SCRIPT_DIR}/optimize-allure-plugin.sh" \
+        "${branch_dir}/${dashboard_name}" "${STATIC_ROOT}/dashboard"
+    fi
+  done
 
   while IFS= read -r run_dir; do
     bash "${SCRIPT_DIR}/optimize-allure-run.sh" "${run_dir}" "${STATIC_ROOT}"
