@@ -11,11 +11,14 @@ Tests use [Selenide](https://selenide.org/) and JUnit 5. Allure 3 reports are pu
 [![UI Tests stats](https://qa-guru.github.io/one-page-form-tests-java/readme/stats.svg)](https://qa-guru.github.io/one-page-form-tests-java/allure-reports/)
 
 <a href="https://qa-guru.github.io/one-page-form-tests-java/allure-reports/">
-  <img
-    src="https://qa-guru.github.io/one-page-form-tests-java/readme/dashboard-preview.png"
-    alt="Allure 3 dashboard preview with branch trends"
-    width="100%"
-  />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="readme/dashboard-preview-dark.png">
+    <img
+      src="readme/dashboard-preview.png"
+      alt="Allure 3 dashboard preview with branch trends"
+      width="800"
+    />
+  </picture>
 </a>
 
 > Preview and badges update automatically after each CI run on `main`.

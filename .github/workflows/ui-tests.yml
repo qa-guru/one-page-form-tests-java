@@ -240,8 +240,9 @@ jobs:
             sleep 1
           done
           PREVIEW_URL="http://127.0.0.1:8765/allure-reports/main/dashboard/index.html" \
+            PREVIEW_OUTPUT_DIR="pages/readme" \
             node .github/scripts/capture-dashboard-preview.mjs \
-            || cp readme/dashboard-preview.png pages/readme/dashboard-preview.png
+            || cp readme/dashboard-preview*.png pages/readme/ 2>/dev/null || true
           kill "${SERVE_PID}" || true
 
       - name: Deploy Allure Report
