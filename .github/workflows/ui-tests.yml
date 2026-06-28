@@ -14,7 +14,7 @@ on:
   pull_request:
     branches: [main]
   repository_dispatch:
-    types: [demo-updated]
+    types: [demo-updated, selenoid-run]
 
 concurrency:
   group: ui-tests-${{ github.workflow }}-${{ github.ref }}
@@ -40,9 +40,18 @@ jobs:
       ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
       ALLURE_JOB_RUN_ID: ${{ github.event.inputs.ALLURE_JOB_RUN_ID }}
       ALLURE_RESULTS: build/allure-results
-      BROWSER_VERSION: '148'
+      BROWSER_VERSION: ${{ github.event.client_payload.browser_version || '148' }}
       REPORT_ID: ${{ github.run_id }}
       ALLURE_RUNS_RETENTION: '10'
+      SELENOID_MODE: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'selenoid-run' && 'true' || 'false' }}
+      REMOTE_URL: ${{ github.event.client_payload.remote_url || '' }}
+      BASE_URL: ${{ github.event.client_payload.base_url || '' }}
+      VIDEO_FOLDER: ${{ github.event.client_payload.video_folder || '' }}
+      TEST_CLASS: ${{ github.event.client_payload.test_class || '' }}
+      TEST_CASE_ID: ${{ github.event.client_payload.test_case_id || '' }}
+      SELENOID_URL: ${{ github.event.client_payload.selenoid_url || '' }}
+      SOURCE_REPO: ${{ github.event.client_payload.source_repo || '' }}
+      SOURCE_RUN_URL: ${{ github.event.client_payload.source_run_url || '' }}
 
     steps:
       - name: Checkout tests repository
@@ -51,6 +60,7 @@ jobs:
           fetch-depth: 1
 
       - name: Checkout demo pages
+        if: env.SELENOID_MODE != 'true'
         uses: actions/checkout@v6
         with:
           repository: ${{ env.DEMO_REPO }}
@@ -80,6 +90,7 @@ jobs:
           cache: gradle
 
       - name: Cache Selenium browsers
+        if: env.SELENOID_MODE != 'true'
         uses: actions/cache@v5
         with:
           path: ~/.cache/selenium
@@ -113,12 +124,30 @@ jobs:
       - name: Run UI tests
         run: |
           set +e
-          allurectl watch -- ./gradlew test \
-            -Denv=ci \
-            -DbrowserVersion=${{ env.BROWSER_VERSION }} \
-            -DbaseUrl="file://${{ github.workspace }}/demo/"
+          GRADLE_ARGS=(-Denv=ci -DbrowserVersion="${BROWSER_VERSION}")
+
+          if [ "${SELENOID_MODE}" = "true" ]; then
+            GRADLE_ARGS+=(-DbaseUrl="${BASE_URL}" -DremoteUrl="${REMOTE_URL}" -DvideoFolder="${VIDEO_FOLDER}")
+          else
+            GRADLE_ARGS+=(-DbaseUrl="file://${{ github.workspace }}/demo/")
+          fi
+
+          if [ -n "${TEST_CLASS}" ]; then
+            allurectl watch -- ./gradlew test --tests "${TEST_CLASS}" "${GRADLE_ARGS[@]}"
+          else
+            allurectl watch -- ./gradlew test "${GRADLE_ARGS[@]}"
+          fi
           echo "TEST_EXIT=$?" >> "$GITHUB_ENV"
           set -e
+
+      - name: Download Selenoid video
+        if: always() && env.SELENOID_MODE == 'true'
+        run: |
+          VIDEO_URL=$(grep -rhoE 'https://[^"]+/video/[a-f0-9-]+\.mp4' build/allure-results 2>/dev/null | head -1 || true)
+          if [ -n "$VIDEO_URL" ]; then
+            curl -fsSL "$VIDEO_URL" -o test-video.mp4
+            echo "VIDEO_URL=$VIDEO_URL" >> "$GITHUB_ENV"
+          fi
 
       - name: Generate Allure report
         run: |
@@ -136,6 +165,8 @@ jobs:
              --arg build "#${{ github.run_number }}" \
              --arg branch "${{ github.head_ref || github.ref_name }}" \
              --arg demoUrl "${{ env.DEMO_BASE_URL }}" \
+             --arg selenoidUrl "${{ env.SELENOID_URL }}" \
+             --arg sourceRun "${{ env.SOURCE_RUN_URL }}" \
              'del(.plugins.csv)
               | .plugins.awesome.options.charts |= .[0:3]
               | .plugins.dashboard.options.layout |= .[0:4]
@@ -144,7 +175,13 @@ jobs:
                   "Build": $build,
                   "Branch": $branch,
                   "Demo": $demoUrl
-                }' allurerc.json > allurerc.ci.json
+                }
+              | if $selenoidUrl != "" then
+                  .variables += {
+                    "Selenoid": $selenoidUrl,
+                    "Triggered by": $sourceRun
+                  }
+                else . end' allurerc.json > allurerc.ci.json
           mv allurerc.ci.json allurerc.json
 
           ./gradlew allureReport
@@ -242,6 +279,14 @@ jobs:
           publish_dir: pages
           enable_jekyll: false
 
+      - name: Upload test video
+        if: always() && hashFiles('test-video.mp4') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-video-${{ env.TEST_CASE_ID || github.run_id }}
+          path: test-video.mp4
+          retention-days: 14
+
       - name: Comment Allure results on PR
         if: always() && github.event_name == 'pull_request'
         uses: allure-framework/allure-action@v0.7.2
@@ -266,10 +311,20 @@ jobs:
             echo "## Allure Report"
             echo ""
             echo "- Branch: \`${{ env.BRANCH_SLUG }}\`"
-            echo "- Demo: [${{ env.DEMO_BASE_URL }}](${{ env.DEMO_BASE_URL }})"
+            if [ "${{ env.SELENOID_MODE }}" = "true" ]; then
+              echo "- Selenoid: [${{ env.SELENOID_URL }}](${{ env.SELENOID_URL }})"
+              if [ -n "${{ env.SOURCE_RUN_URL }}" ]; then
+                echo "- Triggered by: [${{ env.SOURCE_REPO }}](${{ env.SOURCE_RUN_URL }})"
+              fi
+            else
+              echo "- Demo: [${{ env.DEMO_BASE_URL }}](${{ env.DEMO_BASE_URL }})"
+            fi
             echo "- [Overview dashboard](${GLOBAL_DASHBOARD_URL})"
             echo "- [Branch dashboard](${BRANCH_DASHBOARD_URL})"
             echo "- [Run #${{ github.run_number }}](${REPORT_URL})"
+            if [ -n "${VIDEO_URL:-}" ]; then
+              echo "- Selenoid video: \`${VIDEO_URL}\`"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Fail job if tests failed

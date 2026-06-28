@@ -28,4 +28,12 @@ public interface TestConfig extends Config {
     @Key("headless")
     @DefaultValue("false")
     boolean headless();
+
+    @Key("remoteUrl")
+    @DefaultValue("")
+    String remoteUrl();
+
+    @Key("videoFolder")
+    @DefaultValue("")
+    String videoFolder();
 }
