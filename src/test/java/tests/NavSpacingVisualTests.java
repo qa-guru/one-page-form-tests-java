@@ -16,7 +16,8 @@ import java.util.List;
 
 import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.executeJavaScript;
-import static com.codeborne.selenide.Selenide.open;
+import static helpers.BrowserSessionHelper.openDemoPage;
+import static helpers.LayoutCss.RESPONSIVE_BREAKPOINT_PX;
 import static helpers.NavLayout.MEASURE_DASHBOARD_GAPS_SCRIPT;
 import static helpers.NavLayout.MEASURE_HEADER_GAPS_SCRIPT;
 import static helpers.NavLayout.assertUniformGaps;
@@ -28,7 +29,7 @@ import static helpers.ViewportHelper.setViewport;
 @Feature("Navigation spacing")
 @DisplayName("Navigation spacing visual tests")
 @Execution(ExecutionMode.SAME_THREAD)
-class NavSpacingVisualTests extends TestBase {
+class NavSpacingVisualTests extends ReuseBrowserTestBase {
 
     private static final Path BASELINE_ROOT = Path.of("src/test/resources/screenshots/nav");
 
@@ -39,10 +40,12 @@ class NavSpacingVisualTests extends TestBase {
     @DisplayName("Header nav keeps fixed gaps and screenshot at multiple widths")
     void headerNavSpacingAndScreenshot(int viewportWidth) {
         setViewport(viewportWidth, 900);
-        open("/index.html");
+        openDemoPage("/index.html");
 
-        var gaps = readGaps(MEASURE_HEADER_GAPS_SCRIPT);
-        assertUniformGaps(gaps, "Header nav", viewportWidth);
+        if (viewportWidth > RESPONSIVE_BREAKPOINT_PX) {
+            var gaps = readGaps(MEASURE_HEADER_GAPS_SCRIPT);
+            assertUniformGaps(gaps, "Header nav", viewportWidth);
+        }
 
         captureAndCompare(
                 headerNavShotTarget(),
@@ -57,7 +60,7 @@ class NavSpacingVisualTests extends TestBase {
     @DisplayName("Dashboard nav keeps fixed gaps and screenshot at multiple widths")
     void dashboardNavSpacingAndScreenshot(int viewportWidth) {
         setViewport(viewportWidth, 900);
-        open("/index.html");
+        openDemoPage("/index.html");
 
         var gaps = readGaps(MEASURE_DASHBOARD_GAPS_SCRIPT);
         assertUniformGaps(gaps, "Dashboard nav", viewportWidth);

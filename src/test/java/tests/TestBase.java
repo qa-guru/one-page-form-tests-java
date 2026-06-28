@@ -44,6 +44,10 @@ public class TestBase {
         }
     }
 
+    protected boolean closeBrowserAfterEach() {
+        return true;
+    }
+
     @AfterEach
     void afterEach() {
         if (attachScreenshots()) {
@@ -52,15 +56,17 @@ public class TestBase {
         if (isSelenoidRun() && !config.videoFolder().isBlank()) {
             Attachments.video();
         }
-        closeWebDriver();
+        if (closeBrowserAfterEach()) {
+            closeWebDriver();
+        }
     }
 
-    private static boolean isSelenoidRun() {
+    protected static boolean isSelenoidRun() {
         return !config.remoteUrl().isBlank();
     }
 
     /** Local runs always; in CI — only when tests go through Selenoid remote. */
-    private static boolean attachScreenshots() {
+    protected static boolean attachScreenshots() {
         return isSelenoidRun() || !"ci".equals(System.getProperty("env"));
     }
 }

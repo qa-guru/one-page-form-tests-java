@@ -13,7 +13,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import static com.codeborne.selenide.Condition.attributeMatching;
 import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.executeJavaScript;
-import static com.codeborne.selenide.Selenide.open;
+import static helpers.BrowserSessionHelper.openDemoPage;
 import static com.codeborne.selenide.Selenide.switchTo;
 import static helpers.LayoutCss.RESPONSIVE_BREAKPOINT_PX;
 import static helpers.LayoutCss.gridColumnCount;
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Feature("Dashboard layout")
 @DisplayName("Dashboard layout")
 @Execution(ExecutionMode.SAME_THREAD)
-class DashboardLayoutTests extends TestBase {
+class DashboardLayoutTests extends ReuseBrowserTestBase {
 
     private static final String DEMO_LIST_GRID_SCRIPT = """
             const list = document.querySelector('.demo-list');
@@ -80,7 +80,7 @@ class DashboardLayoutTests extends TestBase {
     }
 
     private static void openLandingWithDashboard() {
-        open("/index.html");
+        openDemoPage("/index.html");
         $("#dashboard-frame").should(attributeMatching("data-dashboard-ready", "true"));
         executeJavaScript("window.AllureShell?.syncDashboardLayouts?.()");
     }

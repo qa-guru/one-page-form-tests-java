@@ -1,11 +1,52 @@
 package helpers;
 
 import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public final class NavLayout {
 
     public static final int EXPECTED_GAP_PX = 12;
     public static final double GAP_TOLERANCE_PX = 0.6;
+    public static final double POSITION_TOLERANCE_PX = 0.6;
+
+    public static final List<String> STABLE_HEADER_SELECTORS = List.of(
+            "[data-testid='logo-link']",
+            "[data-testid='forms-link']",
+            "[data-testid='lang-toggle']",
+            "[data-testid='theme-toggle']",
+            "[data-testid='github-link']",
+            "[data-testid='github-io-link']"
+    );
+
+    public static final List<String> FULL_NAV_SELECTORS = List.of(
+            "[data-testid='clubs-link']",
+            "[data-testid='create-club-link']",
+            "[data-testid='login-link']",
+            "[data-testid='sandbox-link']"
+    );
+
+    public static final String MEASURE_NAV_POSITIONS_SCRIPT = """
+            const selectors = arguments[0];
+            const result = {};
+            selectors.forEach((selector) => {
+              const el = document.querySelector(selector);
+              if (!el) return;
+              const rect = el.getBoundingClientRect();
+              const style = getComputedStyle(el);
+              result[selector] = {
+                left: Math.round(rect.left * 100) / 100,
+                top: Math.round(rect.top * 100) / 100,
+                width: Math.round(rect.width * 100) / 100,
+                height: Math.round(rect.height * 100) / 100,
+                fontWeight: style.fontWeight,
+                fontSize: style.fontSize
+              };
+            });
+            return result;
+            """;
 
     public static final String MEASURE_HEADER_GAPS_SCRIPT = """
             const root = document.querySelector('.header-left');
@@ -50,6 +91,80 @@ public final class NavLayout {
             throw new AssertionError(
                     "%s gaps drift from %dpx at %dpx viewport: min=%.2f max=%.2f values=%s"
                             .formatted(navName, expected, viewportWidth, min, max, gaps));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Map<String, Map<String, Object>> readPositions(List<String> selectors) {
+        return com.codeborne.selenide.Selenide.executeJavaScript(
+                MEASURE_NAV_POSITIONS_SCRIPT,
+                selectors
+        );
+    }
+
+    public static void assertPositionsMatch(
+            Map<String, Map<String, Object>> reference,
+            Map<String, Map<String, Object>> actual,
+            String pageName
+    ) {
+        for (var entry : actual.entrySet()) {
+            var selector = entry.getKey();
+            var current = entry.getValue();
+            var expected = reference.get(selector);
+            assertTrue(expected != null,
+                    "No reference position for %s while checking %s".formatted(selector, pageName));
+
+            assertNear(expected.get("left"), current.get("left"), "left", selector, pageName);
+            assertNear(expected.get("top"), current.get("top"), "top", selector, pageName);
+            assertNear(expected.get("width"), current.get("width"), "width", selector, pageName);
+            assertNear(expected.get("height"), current.get("height"), "height", selector, pageName);
+            assertEquals(expected.get("fontSize"), current.get("fontSize"),
+                    "font-size changed for %s on %s".formatted(selector, pageName));
+        }
+    }
+
+    public static void assertFormsLinkIsBold(Map<String, Map<String, Object>> positions) {
+        var forms = positions.get("[data-testid='forms-link']");
+        assertTrue(forms != null, "Forms link is missing from header nav");
+        var weight = String.valueOf(forms.get("fontWeight"));
+        assertTrue("700".equals(weight) || "bold".equalsIgnoreCase(weight),
+                "Forms link must stay bold, got font-weight=%s".formatted(weight));
+    }
+
+    public static void assertActiveNavLinkWeightIsNormal(String activeSelector, Map<String, Map<String, Object>> positions) {
+        var active = positions.get(activeSelector);
+        assertTrue(active != null, "Active nav link %s is missing".formatted(activeSelector));
+        var weight = String.valueOf(active.get("fontWeight"));
+        assertTrue("500".equals(weight) || "normal".equalsIgnoreCase(weight),
+                "Active nav link %s must not become bold, got font-weight=%s".formatted(activeSelector, weight));
+    }
+
+    public static List<String> selectorsForPage(String pagePath) {
+        var selectors = new java.util.ArrayList<>(STABLE_HEADER_SELECTORS);
+        if (!"sandbox.html".equals(pagePath)) {
+            selectors.addAll(FULL_NAV_SELECTORS);
+        }
+        return selectors;
+    }
+
+    public static String activeSelectorForPage(String pagePath) {
+        return switch (pagePath) {
+            case "index.html" -> "[data-testid='forms-link']";
+            case "text-box.html" -> "[data-testid='clubs-link']";
+            case "automation-practice-form.html" -> "[data-testid='create-club-link']";
+            case "login.html" -> "[data-testid='login-link']";
+            case "sandbox.html" -> "[data-testid='sandbox-link']";
+            default -> throw new IllegalArgumentException("Unknown page: " + pagePath);
+        };
+    }
+
+    private static void assertNear(Object expected, Object actual, String axis, String selector, String pageName) {
+        var expectedValue = ((Number) expected).doubleValue();
+        var actualValue = ((Number) actual).doubleValue();
+        if (Math.abs(expectedValue - actualValue) > POSITION_TOLERANCE_PX) {
+            throw new AssertionError(
+                    "%s position shifted for %s on %s: expected %.2f, actual %.2f"
+                            .formatted(axis, selector, pageName, expectedValue, actualValue));
         }
     }
 }

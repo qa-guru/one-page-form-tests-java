@@ -177,50 +177,65 @@ cat >> "${OUTPUT_DIR}/stats.svg" <<EOF
 </svg>
 EOF
 
-cat > "${OUTPUT_DIR}/metrics-panel.svg" <<EOF
+write_metrics_panel() {
+  local output_file="$1"
+  local bg0="$2"
+  local bg1="$3"
+  local stroke="$4"
+  local title_fill="$5"
+  local meta_fill="$6"
+  local value_fill="$7"
+  local label_fill="$8"
+  local legend_fill="$9"
+  local stack_fill="${10}"
+  local bar_track="${11}"
+  local status_opacity="${12}"
+  local gradient_id="${13}"
+
+  cat > "${output_file}" <<EOF
 <svg xmlns="http://www.w3.org/2000/svg" width="800" height="168" viewBox="0 0 800 168" role="img" aria-label="UI Tests metrics: ${total} total, ${pass_rate} pass rate">
   <title>UI Tests on ${BRANCH}${build_line} · ${status_label}</title>
   <defs>
-    <linearGradient id="panel-bg" x1="0" y1="0" x2="800" y2="168" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#f8fafc"/>
+    <linearGradient id="${gradient_id}" x1="0" y1="0" x2="800" y2="168" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="${bg0}"/>
+      <stop offset="1" stop-color="${bg1}"/>
     </linearGradient>
   </defs>
-  <rect width="800" height="168" rx="14" fill="url(#panel-bg)" stroke="rgba(11,48,86,0.14)"/>
-  <rect x="20" y="20" width="88" height="88" rx="12" fill="${status_bg}" opacity="0.12"/>
+  <rect width="800" height="168" rx="14" fill="url(#${gradient_id})" stroke="${stroke}"/>
+  <rect x="20" y="20" width="88" height="88" rx="12" fill="${status_bg}" opacity="${status_opacity}"/>
   <rect x="20" y="20" width="88" height="88" rx="12" fill="none" stroke="${status_bg}" stroke-width="1.5"/>
   <text x="64" y="58" text-anchor="middle" fill="${status_bg}" font-family="ui-sans-serif,system-ui,sans-serif" font-size="13" font-weight="800">${status_label_upper}</text>
   <text x="64" y="78" text-anchor="middle" fill="${status_bg}" font-family="ui-sans-serif,system-ui,sans-serif" font-size="11" font-weight="600">${total} tests</text>
-  <text x="128" y="36" fill="rgba(1,10,24,0.88)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="18" font-weight="700">UI Tests · Automated E2E</text>
-  <text x="128" y="56" fill="rgba(2,19,44,0.58)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">${BRANCH} · build ${build_meta} · ${status_label}</text>
-  <text x="128" y="88" fill="rgba(1,10,24,0.78)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="28" font-weight="700">${total}</text>
-  <text x="188" y="88" fill="rgba(2,19,44,0.55)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">total</text>
+  <text x="128" y="36" fill="${title_fill}" font-family="ui-sans-serif,system-ui,sans-serif" font-size="18" font-weight="700">UI Tests · Automated E2E</text>
+  <text x="128" y="56" fill="${meta_fill}" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">${BRANCH} · build ${build_meta} · ${status_label}</text>
+  <text x="128" y="88" fill="${value_fill}" font-family="ui-sans-serif,system-ui,sans-serif" font-size="28" font-weight="700">${total}</text>
+  <text x="188" y="88" fill="${label_fill}" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">total</text>
   <text x="248" y="88" fill="#008a56" font-family="ui-sans-serif,system-ui,sans-serif" font-size="28" font-weight="700">${passed}</text>
-  <text x="286" y="88" fill="rgba(2,19,44,0.55)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">passed</text>
+  <text x="286" y="88" fill="${label_fill}" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">passed</text>
   <text x="360" y="88" fill="#dc2626" font-family="ui-sans-serif,system-ui,sans-serif" font-size="28" font-weight="700">${failed}</text>
-  <text x="394" y="88" fill="rgba(2,19,44,0.55)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">failed</text>
-  <text x="560" y="72" fill="rgba(1,10,24,0.78)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="22" font-weight="700">${pass_rate}</text>
-  <text x="560" y="92" fill="rgba(2,19,44,0.55)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">pass rate</text>
-  <text x="680" y="72" fill="rgba(1,10,24,0.78)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="22" font-weight="700">${duration_label}</text>
-  <text x="680" y="92" fill="rgba(2,19,44,0.55)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">duration</text>
-  <rect x="40" y="118" width="${panel_bar_width}" height="12" rx="6" fill="#e2e8f0"/>
+  <text x="394" y="88" fill="${label_fill}" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">failed</text>
+  <text x="560" y="72" fill="${value_fill}" font-family="ui-sans-serif,system-ui,sans-serif" font-size="22" font-weight="700">${pass_rate}</text>
+  <text x="560" y="92" fill="${label_fill}" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">pass rate</text>
+  <text x="680" y="72" fill="${value_fill}" font-family="ui-sans-serif,system-ui,sans-serif" font-size="22" font-weight="700">${duration_label}</text>
+  <text x="680" y="92" fill="${label_fill}" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">duration</text>
+  <rect x="40" y="118" width="${panel_bar_width}" height="12" rx="6" fill="${bar_track}"/>
 EOF
 
-if [ "${panel_passed_w}" -gt 0 ]; then
-  echo "  <rect x=\"${panel_passed_x}\" y=\"118\" width=\"${panel_passed_w}\" height=\"12\" rx=\"6\" fill=\"#008a56\"/>" >> "${OUTPUT_DIR}/metrics-panel.svg"
-fi
-if [ "${panel_failed_w}" -gt 0 ]; then
-  echo "  <rect x=\"${panel_failed_x}\" y=\"118\" width=\"${panel_failed_w}\" height=\"12\" rx=\"6\" fill=\"#dc2626\"/>" >> "${OUTPUT_DIR}/metrics-panel.svg"
-fi
-if [ "${panel_broken_w}" -gt 0 ]; then
-  echo "  <rect x=\"${panel_broken_x}\" y=\"118\" width=\"${panel_broken_w}\" height=\"12\" rx=\"6\" fill=\"#ea580c\"/>" >> "${OUTPUT_DIR}/metrics-panel.svg"
-fi
-if [ "${panel_skipped_w}" -gt 0 ]; then
-  echo "  <rect x=\"${panel_skipped_x}\" y=\"118\" width=\"${panel_skipped_w}\" height=\"12\" rx=\"6\" fill=\"#94a3b8\"/>" >> "${OUTPUT_DIR}/metrics-panel.svg"
-fi
+  if [ "${panel_passed_w}" -gt 0 ]; then
+    echo "  <rect x=\"${panel_passed_x}\" y=\"118\" width=\"${panel_passed_w}\" height=\"12\" rx=\"6\" fill=\"#008a56\"/>" >> "${output_file}"
+  fi
+  if [ "${panel_failed_w}" -gt 0 ]; then
+    echo "  <rect x=\"${panel_failed_x}\" y=\"118\" width=\"${panel_failed_w}\" height=\"12\" rx=\"6\" fill=\"#dc2626\"/>" >> "${output_file}"
+  fi
+  if [ "${panel_broken_w}" -gt 0 ]; then
+    echo "  <rect x=\"${panel_broken_x}\" y=\"118\" width=\"${panel_broken_w}\" height=\"12\" rx=\"6\" fill=\"#ea580c\"/>" >> "${output_file}"
+  fi
+  if [ "${panel_skipped_w}" -gt 0 ]; then
+    echo "  <rect x=\"${panel_skipped_x}\" y=\"118\" width=\"${panel_skipped_w}\" height=\"12\" rx=\"6\" fill=\"#94a3b8\"/>" >> "${output_file}"
+  fi
 
-cat >> "${OUTPUT_DIR}/metrics-panel.svg" <<EOF
-  <g font-family="ui-sans-serif,system-ui,sans-serif" font-size="11" fill="rgba(1,18,40,0.68)">
+  cat >> "${output_file}" <<EOF
+  <g font-family="ui-sans-serif,system-ui,sans-serif" font-size="11" fill="${legend_fill}">
     <circle cx="52" cy="150" r="4" fill="#008a56"/>
     <text x="62" y="154">${passed} passed</text>
     <circle cx="152" cy="150" r="4" fill="#dc2626"/>
@@ -229,9 +244,20 @@ cat >> "${OUTPUT_DIR}/metrics-panel.svg" <<EOF
     <text x="252" y="154">${broken} broken</text>
     <circle cx="338" cy="150" r="4" fill="#94a3b8"/>
     <text x="348" y="154">${skipped} skipped</text>
-    <text x="560" y="154" fill="rgba(2,19,44,0.45)">Java 21 · Selenide · JUnit 5 · Allure 3</text>
+    <text x="560" y="154" fill="${stack_fill}">Java 21 · Selenide · JUnit 5 · Allure 3</text>
   </g>
 </svg>
 EOF
+}
 
-echo "Generated ${OUTPUT_DIR}/badge.svg, stats.svg, metrics-panel.svg (${passed}/${total} passed, ${duration_label})"
+write_metrics_panel "${OUTPUT_DIR}/metrics-panel.svg" \
+  "#ffffff" "#f8fafc" "rgba(11,48,86,0.14)" \
+  "rgba(1,10,24,0.88)" "rgba(2,19,44,0.58)" "rgba(1,10,24,0.78)" "rgba(2,19,44,0.55)" \
+  "rgba(1,18,40,0.68)" "rgba(2,19,44,0.45)" "#e2e8f0" "0.12" "panel-bg"
+
+write_metrics_panel "${OUTPUT_DIR}/metrics-panel-dark.svg" \
+  "#242830" "#1f2329" "rgba(255,255,255,0.08)" \
+  "rgba(232,234,237,0.92)" "rgba(154,160,166,0.88)" "rgba(232,234,237,0.88)" "rgba(154,160,166,0.85)" \
+  "rgba(232,234,237,0.72)" "rgba(154,160,166,0.65)" "#3a4049" "0.16" "panel-bg-dark"
+
+echo "Generated ${OUTPUT_DIR}/badge.svg, stats.svg, metrics-panel.svg, metrics-panel-dark.svg (${passed}/${total} passed, ${duration_label})"
