@@ -72,9 +72,29 @@
     }
   }
 
+  function updateMetricsPanel(theme) {
+    const img = document.getElementById("metrics-panel-img");
+    if (!img) return;
+
+    const normalized = theme === "dark" ? "dark" : "light";
+    const nextSrc =
+      img.dataset[normalized === "dark" ? "srcDark" : "srcLight"] ||
+      img.getAttribute("src")?.replace(/-dark(?=\.svg$)/, "") ||
+      "";
+    const resolvedSrc =
+      normalized === "dark" && nextSrc.endsWith(".svg") && !nextSrc.endsWith("-dark.svg")
+        ? nextSrc.replace(/\.svg$/, "-dark.svg")
+        : nextSrc;
+
+    if (resolvedSrc && img.getAttribute("src") !== resolvedSrc) {
+      img.setAttribute("src", resolvedSrc);
+    }
+  }
+
   function applySiteTheme(theme) {
     const normalized = theme === "dark" ? "dark" : "light";
     document.documentElement.setAttribute("data-theme", normalized);
+    updateMetricsPanel(normalized);
     return normalized;
   }
 
@@ -125,9 +145,16 @@
     return window.matchMedia(`(max-width: ${RESPONSIVE_BREAKPOINT_PX}px)`).matches;
   }
 
+  function syncShellLayoutAttribute() {
+    document.documentElement.dataset.shellLayout = isNarrowShellLayout() ? "narrow" : "wide";
+  }
+
   function applyDashboardLayout(frame) {
     const doc = getDashboardDocument(frame);
     if (!doc) return;
+
+    const narrow = isNarrowShellLayout();
+    doc.documentElement.dataset.shellLayout = narrow ? "narrow" : "wide";
 
     let style = doc.getElementById(LAYOUT_SYNC_STYLE_ID);
     if (!style) {
@@ -135,7 +162,7 @@
       style.id = LAYOUT_SYNC_STYLE_ID;
       doc.head.appendChild(style);
     }
-    style.textContent = isNarrowShellLayout() ? NARROW_DASHBOARD_LAYOUT_CSS : "";
+    style.textContent = narrow ? NARROW_DASHBOARD_LAYOUT_CSS : "";
     resizeFrame(frame);
   }
 
@@ -251,6 +278,7 @@
   });
 
   initSiteTheme();
+  syncShellLayoutAttribute();
 
   window.AllureShell = {
     loadDashboardFrame,
@@ -261,6 +289,7 @@
     toggleDashboardTheme,
     responsiveBreakpointPx: RESPONSIVE_BREAKPOINT_PX,
     isNarrowShellLayout,
+    syncShellLayoutAttribute,
     syncDashboardLayouts,
   };
 
@@ -271,6 +300,7 @@
   }
 
   window.addEventListener("resize", () => {
+    syncShellLayoutAttribute();
     syncDashboardLayouts();
     document.querySelectorAll("iframe.dashboard-frame").forEach(resizeFrame);
     notifyParentResize();
