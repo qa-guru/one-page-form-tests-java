@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Automated Tests Dashboard</title>
+  <script>
+    if (localStorage.getItem("site-theme") === "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
+    }
+  </script>
   <link rel="stylesheet" href="../allure-shell.css">
 </head>
 <body>
@@ -85,7 +90,7 @@
         </div>
         <div class="card-body">
           <ul>
-            <li><a href="main/">main</a></li><li><a href="main/28317651373/awesome/index.html">main — последний run</a></li>
+            <li><a href="main/">main</a></li><li><a href="main/28328619398/awesome/index.html">main — последний run</a></li>
           </ul>
         </div>
       </section>
@@ -93,7 +98,7 @@
       <section class="panel-card panel-card-dashboard">
         <div class="card-header card-header-dashboard">
           <h2><a href="main/">main</a></h2>
-          <a class="report-link" href="main/28317651373/awesome/index.html">полный отчёт →</a>
+          <a class="report-link" href="main/28328619398/awesome/index.html">полный отчёт →</a>
         </div>
         <div class="card-body card-body-dashboard">
           <iframe class="dashboard-frame" src="main/dashboard/index.html" title="Dashboard: main"></iframe>
