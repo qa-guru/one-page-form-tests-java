@@ -28,3 +28,5 @@ for branch_dir in "${ALLURE_ROOT}"/*/; do
     bash "${SCRIPT_DIR}/optimize-allure-run.sh" "${run_dir}" "${STATIC_ROOT}"
   done < <(list_run_dirs "${branch_dir}")
 done
+
+bash "${SCRIPT_DIR}/patch-dashboard-overrides.sh" "${ALLURE_ROOT}"

@@ -8,7 +8,11 @@ Tests use [Selenide](https://selenide.org/) and JUnit 5. Allure 3 reports are pu
 
 ## Automated Tests Dashboard
 
+Live SVG metrics (compact → detailed → full panel), updated after each CI run on `main`:
+
 [![UI Tests stats](https://qa-guru.github.io/one-page-form-tests-java/readme/stats.svg)](https://qa-guru.github.io/one-page-form-tests-java/allure-reports/)
+
+[![UI Tests metrics](https://qa-guru.github.io/one-page-form-tests-java/readme/metrics-panel.svg)](https://qa-guru.github.io/one-page-form-tests-java/allure-reports/)
 
 <a href="https://qa-guru.github.io/one-page-form-tests-java/allure-reports/">
   <picture>

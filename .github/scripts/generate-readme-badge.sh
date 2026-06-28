@@ -12,20 +12,48 @@ passed=0
 failed=0
 broken=0
 skipped=0
+duration_ms=0
 
-while IFS= read -r status; do
+while IFS= read -r line; do
+  status="${line%%$'\t'*}"
+  test_ms="${line#*$'\t'}"
   case "${status}" in
     passed) passed=$((passed + 1)) ;;
     failed) failed=$((failed + 1)) ;;
     broken) broken=$((broken + 1)) ;;
     skipped) skipped=$((skipped + 1)) ;;
   esac
+  if [[ "${test_ms}" =~ ^[0-9]+$ ]]; then
+    duration_ms=$((duration_ms + test_ms))
+  fi
 done < <(
   find "${RESULTS_DIR}" -name '*-result.json' -print0 2>/dev/null \
-    | xargs -0 jq -r '.status // empty' 2>/dev/null || true
+    | xargs -0 jq -r '
+        (.status // "unknown")
+        + "\t"
+        + (if (.start != null and .stop != null) then (.stop - .start | tostring) else "0" end)
+      ' 2>/dev/null || true
 )
 
 total=$((passed + failed + broken + skipped))
+
+format_duration() {
+  local ms="${1:-0}"
+  if [ "${ms}" -lt 1000 ]; then
+    echo "${ms}ms"
+    return
+  fi
+  local sec=$((ms / 1000))
+  if [ "${sec}" -lt 60 ]; then
+    echo "${sec}s"
+    return
+  fi
+  local min=$((sec / 60))
+  local rem=$((sec % 60))
+  echo "${min}m ${rem}s"
+}
+
+duration_label="$(format_duration "${duration_ms}")"
 
 if [ "${total}" -eq 0 ]; then
   passed=0
@@ -33,11 +61,15 @@ if [ "${total}" -eq 0 ]; then
   broken=0
   skipped=0
   status_label="no data"
+  status_label_upper="NO DATA"
   status_bg="#64748b"
   badge_right="awaiting run"
+  pass_rate="—"
 else
+  pass_rate="$((passed * 100 / total))%"
   if [ "${failed}" -gt 0 ] || [ "${broken}" -gt 0 ]; then
     status_label="failing"
+    status_label_upper="FAILING"
     status_bg="#dc2626"
     badge_right="${failed} failed"
     if [ "${broken}" -gt 0 ]; then
@@ -45,14 +77,19 @@ else
     fi
   else
     status_label="passing"
+    status_label_upper="PASSING"
     status_bg="#008a56"
     badge_right="${passed} passed"
   fi
 fi
 
 build_line=""
+build_meta=""
 if [ -n "${BUILD}" ]; then
   build_line=" · build ${BUILD}"
+  build_meta="${BUILD}"
+else
+  build_meta="—"
 fi
 
 cat > "${OUTPUT_DIR}/badge.svg" <<EOF
@@ -92,6 +129,18 @@ failed_x=$((x + passed_w))
 broken_x=$((failed_x + failed_w))
 skipped_x=$((broken_x + broken_w))
 
+panel_bar_width=720
+panel_passed_w=$((passed * panel_bar_width / segment_total))
+panel_failed_w=$((failed * panel_bar_width / segment_total))
+panel_broken_w=$((broken * panel_bar_width / segment_total))
+panel_skipped_w=$((skipped * panel_bar_width / segment_total))
+
+panel_x=40
+panel_passed_x="${panel_x}"
+panel_failed_x=$((panel_x + panel_passed_w))
+panel_broken_x=$((panel_failed_x + panel_failed_w))
+panel_skipped_x=$((panel_broken_x + panel_broken_w))
+
 cat > "${OUTPUT_DIR}/stats.svg" <<EOF
 <svg xmlns="http://www.w3.org/2000/svg" width="360" height="92" viewBox="0 0 360 92" role="img" aria-label="UI Tests stats: ${passed} passed, ${failed} failed">
   <title>UI Tests on ${BRANCH}${build_line}</title>
@@ -128,4 +177,61 @@ cat >> "${OUTPUT_DIR}/stats.svg" <<EOF
 </svg>
 EOF
 
-echo "Generated ${OUTPUT_DIR}/badge.svg and ${OUTPUT_DIR}/stats.svg (${passed}/${total} passed)"
+cat > "${OUTPUT_DIR}/metrics-panel.svg" <<EOF
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="168" viewBox="0 0 800 168" role="img" aria-label="UI Tests metrics: ${total} total, ${pass_rate} pass rate">
+  <title>UI Tests on ${BRANCH}${build_line} · ${status_label}</title>
+  <defs>
+    <linearGradient id="panel-bg" x1="0" y1="0" x2="800" y2="168" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f8fafc"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="168" rx="14" fill="url(#panel-bg)" stroke="rgba(11,48,86,0.14)"/>
+  <rect x="20" y="20" width="88" height="88" rx="12" fill="${status_bg}" opacity="0.12"/>
+  <rect x="20" y="20" width="88" height="88" rx="12" fill="none" stroke="${status_bg}" stroke-width="1.5"/>
+  <text x="64" y="58" text-anchor="middle" fill="${status_bg}" font-family="ui-sans-serif,system-ui,sans-serif" font-size="13" font-weight="800">${status_label_upper}</text>
+  <text x="64" y="78" text-anchor="middle" fill="${status_bg}" font-family="ui-sans-serif,system-ui,sans-serif" font-size="11" font-weight="600">${total} tests</text>
+  <text x="128" y="36" fill="rgba(1,10,24,0.88)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="18" font-weight="700">UI Tests · Automated E2E</text>
+  <text x="128" y="56" fill="rgba(2,19,44,0.58)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">${BRANCH} · build ${build_meta} · ${status_label}</text>
+  <text x="128" y="88" fill="rgba(1,10,24,0.78)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="28" font-weight="700">${total}</text>
+  <text x="188" y="88" fill="rgba(2,19,44,0.55)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">total</text>
+  <text x="248" y="88" fill="#008a56" font-family="ui-sans-serif,system-ui,sans-serif" font-size="28" font-weight="700">${passed}</text>
+  <text x="286" y="88" fill="rgba(2,19,44,0.55)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">passed</text>
+  <text x="360" y="88" fill="#dc2626" font-family="ui-sans-serif,system-ui,sans-serif" font-size="28" font-weight="700">${failed}</text>
+  <text x="394" y="88" fill="rgba(2,19,44,0.55)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">failed</text>
+  <text x="560" y="72" fill="rgba(1,10,24,0.78)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="22" font-weight="700">${pass_rate}</text>
+  <text x="560" y="92" fill="rgba(2,19,44,0.55)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">pass rate</text>
+  <text x="680" y="72" fill="rgba(1,10,24,0.78)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="22" font-weight="700">${duration_label}</text>
+  <text x="680" y="92" fill="rgba(2,19,44,0.55)" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">duration</text>
+  <rect x="40" y="118" width="${panel_bar_width}" height="12" rx="6" fill="#e2e8f0"/>
+EOF
+
+if [ "${panel_passed_w}" -gt 0 ]; then
+  echo "  <rect x=\"${panel_passed_x}\" y=\"118\" width=\"${panel_passed_w}\" height=\"12\" rx=\"6\" fill=\"#008a56\"/>" >> "${OUTPUT_DIR}/metrics-panel.svg"
+fi
+if [ "${panel_failed_w}" -gt 0 ]; then
+  echo "  <rect x=\"${panel_failed_x}\" y=\"118\" width=\"${panel_failed_w}\" height=\"12\" rx=\"6\" fill=\"#dc2626\"/>" >> "${OUTPUT_DIR}/metrics-panel.svg"
+fi
+if [ "${panel_broken_w}" -gt 0 ]; then
+  echo "  <rect x=\"${panel_broken_x}\" y=\"118\" width=\"${panel_broken_w}\" height=\"12\" rx=\"6\" fill=\"#ea580c\"/>" >> "${OUTPUT_DIR}/metrics-panel.svg"
+fi
+if [ "${panel_skipped_w}" -gt 0 ]; then
+  echo "  <rect x=\"${panel_skipped_x}\" y=\"118\" width=\"${panel_skipped_w}\" height=\"12\" rx=\"6\" fill=\"#94a3b8\"/>" >> "${OUTPUT_DIR}/metrics-panel.svg"
+fi
+
+cat >> "${OUTPUT_DIR}/metrics-panel.svg" <<EOF
+  <g font-family="ui-sans-serif,system-ui,sans-serif" font-size="11" fill="rgba(1,18,40,0.68)">
+    <circle cx="52" cy="150" r="4" fill="#008a56"/>
+    <text x="62" y="154">${passed} passed</text>
+    <circle cx="152" cy="150" r="4" fill="#dc2626"/>
+    <text x="162" y="154">${failed} failed</text>
+    <circle cx="242" cy="150" r="4" fill="#ea580c"/>
+    <text x="252" y="154">${broken} broken</text>
+    <circle cx="338" cy="150" r="4" fill="#94a3b8"/>
+    <text x="348" y="154">${skipped} skipped</text>
+    <text x="560" y="154" fill="rgba(2,19,44,0.45)">Java 21 · Selenide · JUnit 5 · Allure 3</text>
+  </g>
+</svg>
+EOF
+
+echo "Generated ${OUTPUT_DIR}/badge.svg, stats.svg, metrics-panel.svg (${passed}/${total} passed, ${duration_label})"
