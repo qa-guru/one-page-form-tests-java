@@ -120,23 +120,17 @@ public final class NavLayout {
             assertNear(expected.get("height"), current.get("height"), "height", selector, pageName);
             assertEquals(expected.get("fontSize"), current.get("fontSize"),
                     "font-size changed for %s on %s".formatted(selector, pageName));
+            assertEquals(expected.get("fontWeight"), current.get("fontWeight"),
+                    "font-weight changed for %s on %s".formatted(selector, pageName));
         }
     }
 
-    public static void assertFormsLinkIsBold(Map<String, Map<String, Object>> positions) {
-        var forms = positions.get("[data-testid='forms-link']");
-        assertTrue(forms != null, "Forms link is missing from header nav");
-        var weight = String.valueOf(forms.get("fontWeight"));
-        assertTrue("700".equals(weight) || "bold".equalsIgnoreCase(weight),
-                "Forms link must stay bold, got font-weight=%s".formatted(weight));
-    }
-
-    public static void assertActiveNavLinkWeightIsNormal(String activeSelector, Map<String, Map<String, Object>> positions) {
-        var active = positions.get(activeSelector);
-        assertTrue(active != null, "Active nav link %s is missing".formatted(activeSelector));
-        var weight = String.valueOf(active.get("fontWeight"));
-        assertTrue("500".equals(weight) || "normal".equalsIgnoreCase(weight),
-                "Active nav link %s must not become bold, got font-weight=%s".formatted(activeSelector, weight));
+    public static void assertNavLinkWeightIsMedium(String selector, Map<String, Map<String, Object>> positions) {
+        var link = positions.get(selector);
+        assertTrue(link != null, "Nav link %s is missing".formatted(selector));
+        var weight = String.valueOf(link.get("fontWeight"));
+        assertTrue("500".equals(weight),
+                "Nav link %s must stay font-weight 500, got %s".formatted(selector, weight));
     }
 
     public static List<String> selectorsForPage(String pagePath) {

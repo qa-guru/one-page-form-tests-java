@@ -18,8 +18,7 @@ import java.util.Map;
 import static com.codeborne.selenide.Selenide.$;
 import static helpers.BrowserSessionHelper.openDemoPage;
 import static helpers.NavLayout.STABLE_HEADER_SELECTORS;
-import static helpers.NavLayout.assertActiveNavLinkWeightIsNormal;
-import static helpers.NavLayout.assertFormsLinkIsBold;
+import static helpers.NavLayout.assertNavLinkWeightIsMedium;
 import static helpers.NavLayout.assertPositionsMatch;
 import static helpers.NavLayout.activeSelectorForPage;
 import static helpers.NavLayout.readPositions;
@@ -68,13 +67,10 @@ class NavStabilityVisualTests extends ReuseBrowserTestBase {
 
         var positions = readPositions(selectorsForPage(pagePath));
         assertPositionsMatch(referencePositions, positions, pagePath);
-        assertFormsLinkIsBold(positions);
 
         var activeSelector = activeSelectorForPage(pagePath);
-        if (!"[data-testid='forms-link']".equals(activeSelector)) {
-            var activePositions = readPositions(List.of(activeSelector));
-            assertActiveNavLinkWeightIsNormal(activeSelector, activePositions);
-        }
+        var activePositions = readPositions(List.of(activeSelector));
+        assertNavLinkWeightIsMedium(activeSelector, activePositions);
 
         captureAndCompare(
                 $(".header-left"),
@@ -104,7 +100,7 @@ class NavStabilityVisualTests extends ReuseBrowserTestBase {
 
         var positions = readPositions(STABLE_HEADER_SELECTORS);
         assertPositionsMatch(referenceStablePositionsRu, positions, pagePath + "?ru");
-        assertFormsLinkIsBold(positions);
+        assertNavLinkWeightIsMedium("[data-testid='forms-link']", positions);
     }
 
     @ParameterizedTest(name = "viewport {0}px")
