@@ -3,7 +3,8 @@ import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 
 const baseUrl =
-  process.env.PREVIEW_URL ?? "http://127.0.0.1:8765/allure-reports/";
+  process.env.PREVIEW_URL ??
+  "http://127.0.0.1:8765/allure-reports/main/dashboard/index.html";
 const output =
   process.env.PREVIEW_OUTPUT ?? "pages/readme/dashboard-preview.png";
 const viewportWidth = Number(process.env.PREVIEW_WIDTH ?? "1280");
@@ -18,8 +19,11 @@ const page = await browser.newPage({
 
 try {
   await page.goto(baseUrl, { waitUntil: "networkidle", timeout: 90_000 });
-  await page.waitForTimeout(4_000);
-  await page.screenshot({ path: output, fullPage: true, type: "png" });
+  await page.waitForSelector('[data-testid="base-layout"]', {
+    timeout: 30_000,
+  });
+  await page.waitForTimeout(3_000);
+  await page.screenshot({ path: output, type: "png" });
   console.log(`Saved dashboard preview to ${output}`);
 } finally {
   await browser.close();

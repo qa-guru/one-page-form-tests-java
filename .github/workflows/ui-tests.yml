@@ -239,7 +239,8 @@ jobs:
             curl -sf http://127.0.0.1:8765/allure-reports/ >/dev/null && break
             sleep 1
           done
-          node .github/scripts/capture-dashboard-preview.mjs \
+          PREVIEW_URL="http://127.0.0.1:8765/allure-reports/main/dashboard/index.html" \
+            node .github/scripts/capture-dashboard-preview.mjs \
             || cp readme/dashboard-preview.png pages/readme/dashboard-preview.png
           kill "${SERVE_PID}" || true
 
