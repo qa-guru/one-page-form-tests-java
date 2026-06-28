@@ -2,7 +2,28 @@
 
 Automated browser tests for the static HTML demos in [qa-guru/one-page-form](https://github.com/qa-guru/one-page-form).
 
-Tests use [Selenide](https://selenide.org/) and JUnit 5. Allure reports are published to GitHub Pages from this repository.
+Tests use [Selenide](https://selenide.org/) and JUnit 5. Allure 3 reports are published to GitHub Pages from this repository.
+
+[![UI Tests](https://qa-guru.github.io/one-page-form-tests-java/readme/badge.svg)](https://qa-guru.github.io/one-page-form-tests-java/allure-reports/)
+[![UI Tests stats](https://qa-guru.github.io/one-page-form-tests-java/readme/stats.svg)](https://qa-guru.github.io/one-page-form-tests-java/allure-reports/)
+
+## UI Tests Dashboard
+
+<a href="https://qa-guru.github.io/one-page-form-tests-java/allure-reports/">
+  <img
+    src="https://qa-guru.github.io/one-page-form-tests-java/readme/dashboard-preview.png"
+    alt="Allure 3 dashboard preview with branch trends"
+    width="100%"
+  />
+</a>
+
+> Preview and badges update automatically after each CI run on `main`.
+
+| Link | Description |
+|------|-------------|
+| [Overview dashboard](https://qa-guru.github.io/one-page-form-tests-java/allure-reports/) | Trends across all branches |
+| [main dashboard](https://qa-guru.github.io/one-page-form-tests-java/allure-reports/main/) | Latest `main` branch analytics |
+| [Demo landing](https://qa-guru.github.io/one-page-form/) | Demo pages with embedded dashboard |
 
 ## Prerequisites
 
@@ -47,17 +68,6 @@ By default, local runs open pages from `../one-page-form/`. Override with:
 ```bash
 ./gradlew test -DbaseUrl=https://qa-guru.github.io/one-page-form/
 ```
-
-## Allure reports (CI)
-
-Published to GitHub Pages:
-
-- [Overview dashboard](https://qa-guru.github.io/one-page-form-tests-java/allure-reports/)
-- [main dashboard](https://qa-guru.github.io/one-page-form-tests-java/allure-reports/main/)
-
-Demo pages:
-
-- [https://qa-guru.github.io/one-page-form/](https://qa-guru.github.io/one-page-form/)
 
 ## What is tested
 
