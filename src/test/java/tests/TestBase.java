@@ -19,12 +19,9 @@ public class TestBase {
 
     @BeforeAll
     static void setup() {
-        var isCi = "ci".equals(System.getProperty("env"));
-        var isRemote = !config.remoteUrl().isBlank();
-
         SelenideLogger.addListener("AllureSelenide",
                 new AllureSelenide()
-                        .screenshots(!isCi || isRemote)
+                        .screenshots(attachScreenshots())
                         .savePageSource(false));
 
         Configuration.baseUrl = resolvedBaseUrl();
@@ -33,7 +30,7 @@ public class TestBase {
         Configuration.browserSize = config.browserSize();
         Configuration.headless = config.headless();
 
-        if (isRemote) {
+        if (isSelenoidRun()) {
             Configuration.remote = config.remoteUrl();
             var capabilities = new MutableCapabilities();
             capabilities.setCapability("selenoid:options", Map.of(
@@ -49,15 +46,21 @@ public class TestBase {
 
     @AfterEach
     void afterEach() {
-        var isCi = "ci".equals(System.getProperty("env"));
-        var isRemote = !config.remoteUrl().isBlank();
-
-        if (!isCi || isRemote) {
+        if (attachScreenshots()) {
             Attachments.screenshotAs("Last screenshot");
         }
-        if (isRemote && !config.videoFolder().isBlank()) {
+        if (isSelenoidRun() && !config.videoFolder().isBlank()) {
             Attachments.video();
         }
         closeWebDriver();
+    }
+
+    private static boolean isSelenoidRun() {
+        return !config.remoteUrl().isBlank();
+    }
+
+    /** Local runs always; in CI — only when tests go through Selenoid remote. */
+    private static boolean attachScreenshots() {
+        return isSelenoidRun() || !"ci".equals(System.getProperty("env"));
     }
 }
