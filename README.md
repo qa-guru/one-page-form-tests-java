@@ -5,9 +5,10 @@ Automated browser tests for the static HTML demos in [qa-guru/one-page-form](htt
 Tests use [Selenide](https://selenide.org/) and JUnit 5. Allure 3 reports are published to GitHub Pages from this repository.
 
 [![UI Tests](https://qa-guru.github.io/one-page-form-tests-java/readme/badge.svg)](https://qa-guru.github.io/one-page-form-tests-java/allure-reports/)
-[![UI Tests stats](https://qa-guru.github.io/one-page-form-tests-java/readme/stats.svg)](https://qa-guru.github.io/one-page-form-tests-java/allure-reports/)
 
 ## UI Tests Dashboard
+
+[![UI Tests stats](https://qa-guru.github.io/one-page-form-tests-java/readme/stats.svg)](https://qa-guru.github.io/one-page-form-tests-java/allure-reports/)
 
 <a href="https://qa-guru.github.io/one-page-form-tests-java/allure-reports/">
   <img
