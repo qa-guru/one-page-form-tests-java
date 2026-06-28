@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UI Tests — {{BRANCH_NAME}}</title>
+  <link rel="stylesheet" href="../../allure-shell.css">
+</head>
+<body>
+{{HEADER}}
+  <main class="page">
+    <div class="site-shell layout">
+      <section class="panel-card">
+        <div class="card-header">
+          <h2>{{BRANCH_NAME}}</h2>
+        </div>
+        <div class="card-body">
+          <a class="back-link" href="../">← Все ветки</a>
+          <p class="page-intro">Dashboard — только тренды. Для дерева тестов откройте полный отчёт.</p>
+        </div>
+      </section>
+
+      <section class="panel-card">
+        <div class="card-header">
+          <h2>Полный отчёт</h2>
+        </div>
+        <div class="card-body">
+          <p class="note">Из dashboard нельзя провалиться в тесты — используйте полный Allure Report.</p>
+          <div class="actions">
+            {{REPORT_CTA}}
+            <a class="btn secondary" href="../">Overview всех веток</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel-card">
+        <div class="card-header">
+          <h2>Прогоны</h2>
+        </div>
+        <div class="card-body">
+          <ul class="runs">
+            {{RUN_LINKS}}
+          </ul>
+        </div>
+      </section>
+
+      <section class="panel-card panel-card-dashboard">
+        <div class="card-header card-header-dashboard">
+          <h2>Trends</h2>
+        </div>
+        <div class="card-body card-body-dashboard">
+          {{DASHBOARD_FRAME}}
+        </div>
+      </section>
+    </div>
+  </main>
+{{FOOTER}}
+  <script src="../../allure-shell.js"></script>
+</body>
+</html>

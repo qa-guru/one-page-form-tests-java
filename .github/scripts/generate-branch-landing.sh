@@ -5,6 +5,8 @@ BRANCH_DIR="${1:?branch directory required}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=allure-pages-lib.sh
 source "${SCRIPT_DIR}/allure-pages-lib.sh"
+# shellcheck source=render-pages-template.sh
+source "${SCRIPT_DIR}/render-pages-template.sh"
 
 branch_name="$(basename "${BRANCH_DIR}")"
 latest_run=""
@@ -60,59 +62,17 @@ if [ -z "${run_links}" ]; then
   run_links="<li>Нет сохранённых прогонов</li>"
 fi
 
-cat > "${BRANCH_DIR}/index.html" <<EOF
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UI Tests — ${branch_name}</title>
-  <link rel="stylesheet" href="../../allure-shell.css">
-</head>
-<body>
-  <div class="shell">
-    <div class="layout">
-      <header class="page-header">
-        <a class="back-link" href="../">← Все ветки</a>
-        <h1>${branch_name}</h1>
-        <p>Dashboard — только тренды. Для дерева тестов откройте полный отчёт.</p>
-      </header>
+if [ -z "${dashboard_frame}" ]; then
+  dashboard_frame='<p class="empty-state">Dashboard не сгенерирован</p>'
+fi
 
-      <section class="card">
-        <div class="card-header">
-          <h2>Полный отчёт</h2>
-        </div>
-        <div class="card-body">
-          <p class="note">Из dashboard нельзя провалиться в тесты — используйте полный Allure Report.</p>
-          <div class="actions">
-            ${report_cta}
-            <a class="btn secondary" href="../">Overview всех веток</a>
-          </div>
-        </div>
-      </section>
+shell_header="$(render_partial header.html "BRAND_HREF=../")"
+shell_footer="$(render_partial footer.html)"
 
-      <section class="card">
-        <div class="card-header">
-          <h2>Прогоны</h2>
-        </div>
-        <div class="card-body">
-          <ul class="runs">
-            ${run_links}
-          </ul>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="card-header">
-          <h2>Trends</h2>
-        </div>
-        <div class="card-body">
-          ${dashboard_frame:-<p class="empty-state">Dashboard не сгенерирован</p>}
-        </div>
-      </section>
-    </div>
-  </div>
-  <script src="../../allure-shell.js"></script>
-</body>
-</html>
-EOF
+render_template branch.html "${BRANCH_DIR}/index.html" \
+  "HEADER=${shell_header}" \
+  "FOOTER=${shell_footer}" \
+  "BRANCH_NAME=${branch_name}" \
+  "RUN_LINKS=${run_links}" \
+  "REPORT_CTA=${report_cta}" \
+  "DASHBOARD_FRAME=${dashboard_frame}"

@@ -5,6 +5,8 @@ PAGES_ALLURE="${1:?pages/allure-reports path required}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=allure-pages-lib.sh
 source "${SCRIPT_DIR}/allure-pages-lib.sh"
+# shellcheck source=render-pages-template.sh
+source "${SCRIPT_DIR}/render-pages-template.sh"
 
 GLOBAL_LANDING="${PAGES_ALLURE}"
 
@@ -64,67 +66,32 @@ for branch in "${sorted_branches[@]:-}"; do
     dashboard_src="${branch}/dashboard/index.html"
   fi
 
-  branch_panels="${branch_panels}
-    <section class=\"card\">
-      <div class=\"card-header\">
-        <h2><a href=\"${branch}/\">${branch}</a></h2>
-        ${report_link}
-      </div>
-      <div class=\"card-body\">
-        <iframe class=\"dashboard-frame\" src=\"${dashboard_src}\" title=\"Dashboard: ${branch}\"></iframe>
-      </div>
-    </section>"
+  branch_panels="${branch_panels}$(render_fragment branch-panel.html \
+    "BRANCH=${branch}" \
+    "REPORT_LINK=${report_link}" \
+    "DASHBOARD_SRC=${dashboard_src}")"
   branch_links="${branch_links}<li><a href=\"${branch}/\">${branch}</a></li>"
   if [ -n "${latest_run}" ]; then
     if [ -f "${GLOBAL_LANDING}/${branch}/${latest_run}/awesome/index.html" ]; then
-      branch_links="${branch_links} <li><a href=\"${branch}/${latest_run}/awesome/index.html\">${branch} — последний run</a></li>"
+      branch_links="${branch_links}<li><a href=\"${branch}/${latest_run}/awesome/index.html\">${branch} — последний run</a></li>"
     elif [ -f "${GLOBAL_LANDING}/${branch}/${latest_run}/index.html" ]; then
-      branch_links="${branch_links} <li><a href=\"${branch}/${latest_run}/index.html\">${branch} — последний run</a></li>"
+      branch_links="${branch_links}<li><a href=\"${branch}/${latest_run}/index.html\">${branch} — последний run</a></li>"
     fi
   fi
 done
 
 if [ -z "${branch_panels}" ]; then
-  branch_panels='<section class="card"><div class="card-body"><p class="empty-state">Пока нет опубликованных отчётов по веткам</p></div></section>'
+  branch_panels='      <section class="panel-card"><div class="card-body"><p class="empty-state">Пока нет опубликованных отчётов по веткам</p></div></section>'
   branch_links='<li>Нет опубликованных веток</li>'
 fi
 
 find "${GLOBAL_LANDING}" -maxdepth 1 -type f ! -name 'index.html' -delete
 
-cat > "${GLOBAL_LANDING}/index.html" <<EOF
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UI Tests Dashboard</title>
-  <link rel="stylesheet" href="../allure-shell.css">
-</head>
-<body>
-  <div class="shell">
-    <div class="layout">
-      <header class="page-header">
-        <h1>UI Tests Dashboard</h1>
-        <p>Тренды по веткам. Для дерева тестов откройте полный отчёт.</p>
-      </header>
+shell_header="$(render_partial header.html "BRAND_HREF=./")"
+shell_footer="$(render_partial footer.html)"
 
-      <p class="note">Dashboard показывает только аналитику. Чтобы кликнуть по тестам, откройте ссылку «полный отчёт» у нужной ветки.</p>
-
-      <section class="card branch-nav">
-        <div class="card-header">
-          <h2>Навигация</h2>
-        </div>
-        <div class="card-body">
-          <ul>
-            ${branch_links}
-          </ul>
-        </div>
-      </section>
-
-      ${branch_panels}
-    </div>
-  </div>
-  <script src="../allure-shell.js"></script>
-</body>
-</html>
-EOF
+render_template overview.html "${GLOBAL_LANDING}/index.html" \
+  "HEADER=${shell_header}" \
+  "FOOTER=${shell_footer}" \
+  "BRANCH_LINKS=${branch_links}" \
+  "BRANCH_PANELS=${branch_panels}"
