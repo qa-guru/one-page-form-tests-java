@@ -24,18 +24,27 @@ class LandingReferenceAssetsTest {
 
     @Test
     @Tag("reference")
-    @DisplayName("allure-shell.css tokens match landing reference")
+    @DisplayName("shell CSS tokens match landing reference")
     void cssTokensMatchReferenceFile() throws Exception {
         var reference = LandingReference.cssTokens();
-        var cssPath = resolveDemoAsset("allure-shell.css");
-        var actual = parseRootTokens(Files.readString(cssPath));
+        var actual = mergedShellTokens();
 
         for (var entry : reference.entrySet()) {
             assertTrue(actual.containsKey(entry.getKey()),
-                    "Missing CSS token in allure-shell.css: " + entry.getKey());
+                    "Missing CSS token in shell CSS: " + entry.getKey());
             assertEquals(entry.getValue(), actual.get(entry.getKey()),
                     "CSS token drift for " + entry.getKey());
         }
+    }
+
+    private static Map<String, String> mergedShellTokens() throws Exception {
+        var tokens = new LinkedHashMap<String, String>();
+        var headerPath = resolveDemoAsset("qa-guru-header.css");
+        if (Files.isRegularFile(headerPath)) {
+            tokens.putAll(parseRootTokens(Files.readString(headerPath)));
+        }
+        tokens.putAll(parseRootTokens(Files.readString(resolveDemoAsset("allure-shell.css"))));
+        return tokens;
     }
 
     private static Path resolveDemoAsset(String fileName) {

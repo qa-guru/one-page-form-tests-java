@@ -25,7 +25,7 @@ import static helpers.ViewportHelper.setViewport;
 @Feature("Landing page reference")
 @DisplayName("Landing page visual reference")
 @Execution(ExecutionMode.SAME_THREAD)
-class LandingPageVisualTests extends ReuseBrowserTestBase {
+class LandingPageVisualTests extends TestBase {
 
     private static final Path BASELINE_ROOT =
             Path.of("src/test/resources/screenshots/landing");

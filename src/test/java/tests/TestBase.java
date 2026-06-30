@@ -2,7 +2,10 @@ package tests;
 
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.logevents.SelenideLogger;
-import helpers.Attachments;
+
+import allure.Attachments;
+import config.ConfigReader;
+import config.TestConfig;
 import io.qameta.allure.selenide.AllureSelenide;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -12,30 +15,35 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import java.util.Map;
 
 import static com.codeborne.selenide.Selenide.closeWebDriver;
-import static config.ConfigReader.config;
-import static config.ConfigReader.resolvedBaseUrl;
+import static config.TestConfig.*;
+import org.aeonbits.owner.ConfigFactory;
+
 
 public class TestBase {
 
+    private static final TestConfig config = ConfigReader.driverConfig;
+    
     @BeforeAll
     static void setup() {
         SelenideLogger.addListener("AllureSelenide",
                 new AllureSelenide()
-                        .screenshots(attachScreenshots())
+                        .screenshots(false)
                         .savePageSource(false));
 
-        Configuration.baseUrl = resolvedBaseUrl();
+        Configuration.baseUrl = config.baseUrl();
         Configuration.browser = config.browser();
         Configuration.browserVersion = config.browserVersion();
         Configuration.browserSize = config.browserSize();
         Configuration.headless = config.headless();
 
-        if (isSelenoidRun()) {
+        if (!config.remoteUrl().isBlank()) {
             Configuration.remote = config.remoteUrl();
             var capabilities = new MutableCapabilities();
             capabilities.setCapability("selenoid:options", Map.of(
-                    "enableVNC", true,
-                    "enableVideo", !config.videoFolder().isBlank()
+                    "enableVNC", config.enableVnc(),
+                    "enableVideo", config.enableVideo(),
+                    "enableHar", config.enableHar(),
+                    "headless", config.headless()
             ));
             Configuration.browserCapabilities = capabilities;
         } else if (config.headless()) {
@@ -44,29 +52,28 @@ public class TestBase {
         }
     }
 
-    protected boolean closeBrowserAfterEach() {
-        return true;
-    }
-
     @AfterEach
     void afterEach() {
-        if (attachScreenshots()) {
-            Attachments.screenshotAs("Last screenshot");
+        if (config.attachBrowserConsoleLogs()) {
+            Attachments.browserConsoleLogs();
         }
-        if (isSelenoidRun() && !config.videoFolder().isBlank()) {
+        if (config.attachPageSource()) {
+            Attachments.pageSource();
+        }
+
+        if (config.attachHarLogs()) {
+            Attachments.harLogs();
+        }
+
+        if (config.attachLastScreenshot()) {
+            Attachments.screenshot("Last screenshot");
+        }
+
+        if (config.enableVideo()) {
             Attachments.video();
         }
-        if (closeBrowserAfterEach()) {
+        if (config.closeBrowserAfterEach()) {
             closeWebDriver();
-        }
-    }
-
-    protected static boolean isSelenoidRun() {
-        return !config.remoteUrl().isBlank();
-    }
-
-    /** Local runs always; in CI — only when tests go through Selenoid remote. */
-    protected static boolean attachScreenshots() {
-        return isSelenoidRun() || !"ci".equals(System.getProperty("env"));
+        }   
     }
 }

@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Epic("One Page Form")
 @Feature("Landing page reference")
 @DisplayName("Landing page reference")
-class LandingPageReferenceTests extends ReuseBrowserTestBase {
+class LandingPageReferenceTests extends TestBase {
 
     @Test
     @Tag("reference")

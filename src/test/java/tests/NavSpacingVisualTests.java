@@ -29,7 +29,7 @@ import static helpers.ViewportHelper.setViewport;
 @Feature("Navigation spacing")
 @DisplayName("Navigation spacing visual tests")
 @Execution(ExecutionMode.SAME_THREAD)
-class NavSpacingVisualTests extends ReuseBrowserTestBase {
+class NavSpacingVisualTests extends TestBase {
 
     private static final Path BASELINE_ROOT = Path.of("src/test/resources/screenshots/nav");
 

@@ -31,7 +31,7 @@ import static helpers.ViewportHelper.setViewport;
 @Feature("Navigation stability")
 @DisplayName("Navigation stability visual tests")
 @Execution(ExecutionMode.SAME_THREAD)
-class NavStabilityVisualTests extends ReuseBrowserTestBase {
+class NavStabilityVisualTests extends TestBase {
 
     private static final int VIEWPORT_WIDTH = 1280;
     private static final Path BASELINE_ROOT = Path.of("src/test/resources/screenshots/nav-stability");

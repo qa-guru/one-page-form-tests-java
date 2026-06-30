@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Feature("Dashboard layout")
 @DisplayName("Dashboard layout")
 @Execution(ExecutionMode.SAME_THREAD)
-class DashboardLayoutTests extends ReuseBrowserTestBase {
+class DashboardLayoutTests extends TestBase {
 
     private static final String DEMO_LIST_GRID_SCRIPT = """
             const list = document.querySelector('.demo-list');

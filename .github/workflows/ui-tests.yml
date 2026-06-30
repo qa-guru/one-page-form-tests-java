@@ -203,6 +203,7 @@ jobs:
             cp -a gh-pages/. pages/
           fi
 
+          cp qa-guru-header.css pages/
           cp allure-shell.css pages/
           cp allure-shell.js pages/
           cp dashboard-overrides.css pages/
