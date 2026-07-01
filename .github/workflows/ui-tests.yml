@@ -124,12 +124,18 @@ jobs:
       - name: Run UI tests
         run: |
           set +e
-          GRADLE_ARGS=(-Denv=ci -DbrowserVersion="${BROWSER_VERSION}")
-
           if [ "${SELENOID_MODE}" = "true" ]; then
+            GRADLE_ARGS=(
+              -Denv=selenoid-autotests-cloud_github_e2e
+              -DbrowserVersion="${BROWSER_VERSION}"
+            )
             GRADLE_ARGS+=(-DbaseUrl="${BASE_URL}" -DremoteUrl="${REMOTE_URL}" -DvideoFolder="${VIDEO_FOLDER}")
           else
-            GRADLE_ARGS+=(-DbaseUrl="file://${{ github.workspace }}/demo/")
+            GRADLE_ARGS=(
+              -Denv=one-page-form_prod_e2e
+              -DbrowserVersion="${BROWSER_VERSION}"
+              -DbaseUrl="file://${{ github.workspace }}/demo/"
+            )
           fi
 
           if [ -n "${TEST_CLASS}" ]; then
