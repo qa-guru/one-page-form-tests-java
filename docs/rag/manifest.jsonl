@@ -1,0 +1,1 @@
+{"id": "alr-quality-gate", "path": "docs/rag/e2e/alr-quality-gate.md", "domain": "e2e-analytics", "phase": "7.analytics", "tags": ["allure", "quality-gate", "ci"]}

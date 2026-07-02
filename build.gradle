@@ -3,12 +3,14 @@ plugins {
     id 'io.qameta.allure' version '4.1.0'
 }
 
+def allureVersion = '3.13.0'
+
 repositories {
     mavenCentral()
 }
 
 allure {
-    version = '3.13.0'
+    version = allureVersion
     adapter {
         allureJavaVersion = '2.35.2'
         resultsDir.set(layout.buildDirectory.dir('allure-results'))
@@ -37,8 +39,35 @@ tasks.withType(JavaCompile) {
 }
 
 test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        def includeTagsProp = System.getProperty('includeTags')
+        if (includeTagsProp) {
+            includeTags(*(includeTagsProp.split(',')*.trim()))
+        }
+        def excludeTagsProp = System.getProperty('excludeTags')
+        if (excludeTagsProp) {
+            excludeTags(*(excludeTagsProp.split(',')*.trim()))
+        }
+    }
     systemProperty 'env', System.getProperty('env', 'local')
     systemProperty 'updateNavBaselines', System.getProperty('updateNavBaselines', 'false')
     maxParallelForks = 1
+}
+
+def allureResultsDir = layout.buildDirectory.dir('allure-results').get().asFile
+
+def hasAllureResults = {
+    allureResultsDir.exists() && (allureResultsDir.listFiles()?.length ?: 0) > 0
+}
+
+tasks.register('allureQualityGate', Exec) {
+    group = 'verification'
+    description = 'Allure 3 quality gate on build/allure-results (rules in allurerc.json)'
+    onlyIf {
+        hasAllureResults()
+    }
+    def resultsDir = allureResultsDir.path
+    def configFile = layout.projectDirectory.file('allurerc.json').asFile.path
+    commandLine 'npx', '--yes', "allure@${allureVersion}", 'quality-gate',
+            resultsDir, '--config', configFile
 }

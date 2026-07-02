@@ -6,12 +6,17 @@ import io.qameta.allure.Attachment;
 import java.nio.charset.StandardCharsets;
 import org.openqa.selenium.OutputType;
 
-import static tests.TestBase.config;
 import static com.codeborne.selenide.Selenide.sessionId;
 import static org.openqa.selenium.logging.LogType.BROWSER;
 
+import config.ConfigReader;
+import config.TestConfig;
+
 
 public class Attachments {
+    
+    private static final TestConfig config = ConfigReader.testConfig;
+
 
     @Attachment(value = "{attachName}", type = "image/png")
     public static byte[] screenshot(String attachName) {

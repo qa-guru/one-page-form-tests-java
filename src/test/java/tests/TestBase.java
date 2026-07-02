@@ -6,6 +6,8 @@ import com.codeborne.selenide.logevents.SelenideLogger;
 import allure.Attachments;
 import config.ConfigReader;
 import config.TestConfig;
+import pages.LoginPage;
+import pages.LogedInPage;
 import io.qameta.allure.selenide.AllureSelenide;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -15,21 +17,17 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import java.util.Map;
 
 import static com.codeborne.selenide.Selenide.closeWebDriver;
-import static config.TestConfig.*;
-import org.aeonbits.owner.ConfigFactory;
 
 
 public class TestBase {
 
-    private static final TestConfig config = ConfigReader.driverConfig;
+    LoginPage loginPage = new LoginPage();  
+    LogedInPage logedInPage = new LogedInPage();
+    
+    protected static final TestConfig config = ConfigReader.testConfig;
     
     @BeforeAll
     static void setup() {
-        SelenideLogger.addListener("AllureSelenide",
-                new AllureSelenide()
-                        .screenshots(false)
-                        .savePageSource(false));
-
         Configuration.baseUrl = config.baseUrl();
         Configuration.browser = config.browser();
         Configuration.browserVersion = config.browserVersion();
@@ -49,6 +47,13 @@ public class TestBase {
         } else if (config.headless()) {
             Configuration.browserCapabilities = new ChromeOptions()
                     .addArguments("--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage");
+        }
+
+        if (config.enableAllureSelenideStepsListener()) {
+            SelenideLogger.addListener("AllureSelenide",
+                new AllureSelenide()
+                        .screenshots(false)
+                        .savePageSource(false));
         }
     }
 

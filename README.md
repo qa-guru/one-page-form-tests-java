@@ -67,6 +67,17 @@ Open the HTML report after a run:
 open build/reports/tests/test/index.html
 ```
 
+## Quality gate
+
+After a test run, Allure 3 quality gate enforces rules from `allurerc.json` (default: `maxFailures: 0`). Known flaky tests can be excluded via `known.json`.
+
+```bash
+./gradlew test -DincludeTags=smoke -DexcludeTags=visual
+./gradlew allureQualityGate
+```
+
+CI runs the gate after tests and before report generation; the job fails if tests or the gate fail. Details: [`docs/rag/e2e/alr-quality-gate.md`](docs/rag/e2e/alr-quality-gate.md).
+
 ## Configuration
 
 Browser settings live in `src/test/java/tests/TestBase.java`.

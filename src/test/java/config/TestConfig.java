@@ -52,6 +52,10 @@ public interface TestConfig extends Config {
     @DefaultValue("false")
     boolean closeBrowserAfterEach();
 
+    @Key("enableAllureSelenideStepsListener")
+    @DefaultValue("false")
+    boolean enableAllureSelenideStepsListener();
+
     @Key("enableHar")
     @DefaultValue("false")
     boolean enableHar();

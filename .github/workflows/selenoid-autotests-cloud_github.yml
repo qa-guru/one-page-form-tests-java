@@ -1,4 +1,7 @@
-name: UI Tests
+# App e2e — one-page-form consumer (ethalon: selenoid-autotests-cloud_github.yml)
+# Runnable filename = ethalon filename. Selenoid slice: -Denv=selenoid-autotests-cloud_github_e2e
+
+name: one-page-form-tests-java Tests
 
 on:
   workflow_dispatch:
@@ -17,7 +20,7 @@ on:
     types: [demo-updated, selenoid-run]
 
 concurrency:
-  group: ui-tests-${{ github.workflow }}-${{ github.ref }}
+  group: selenoid-autotests-cloud_github-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 permissions:
@@ -31,8 +34,8 @@ env:
   DEMO_BASE_URL: https://qa-guru.github.io/one-page-form/
 
 jobs:
-  ui-tests:
-    name: UI Tests
+  app-e2e:
+    name: App e2e
     runs-on: ubuntu-latest
     env:
       ALLURE_ENDPOINT: https://allure.autotests.cloud
@@ -128,8 +131,19 @@ jobs:
             GRADLE_ARGS=(
               -Denv=selenoid-autotests-cloud_github_e2e
               -DbrowserVersion="${BROWSER_VERSION}"
+              -Djunit.jupiter.execution.parallel.config.fixed.parallelism=3
+              -DincludeTags=smoke
+              -DexcludeTags=visual
             )
-            GRADLE_ARGS+=(-DbaseUrl="${BASE_URL}" -DremoteUrl="${REMOTE_URL}" -DvideoFolder="${VIDEO_FOLDER}")
+            if [ -n "${BASE_URL}" ]; then
+              GRADLE_ARGS+=(-DbaseUrl="${BASE_URL}")
+            fi
+            if [ -n "${REMOTE_URL}" ]; then
+              GRADLE_ARGS+=(-DremoteUrl="${REMOTE_URL}")
+            fi
+            if [ -n "${VIDEO_FOLDER}" ]; then
+              GRADLE_ARGS+=(-DvideoFolder="${VIDEO_FOLDER}")
+            fi
           else
             GRADLE_ARGS=(
               -Denv=one-page-form_prod_e2e
@@ -144,6 +158,14 @@ jobs:
             allurectl watch -- ./gradlew test "${GRADLE_ARGS[@]}"
           fi
           echo "TEST_EXIT=$?" >> "$GITHUB_ENV"
+          set -e
+
+      - name: Allure 3 quality gate
+        if: always() && hashFiles('build/allure-results/**') != ''
+        run: |
+          set +e
+          ./gradlew allureQualityGate
+          echo "QUALITY_GATE_EXIT=$?" >> "$GITHUB_ENV"
           set -e
 
       - name: Download Selenoid video
@@ -191,7 +213,6 @@ jobs:
           mv allurerc.ci.json allurerc.json
 
           ./gradlew allureReport
-          build/allure/allure3/node_modules/.bin/allure quality-gate build/allure-results --config allurerc.json
 
       - name: Assemble Allure site
         if: always()
@@ -321,7 +342,7 @@ jobs:
           echo "::notice title=Allure Report::${REPORT_URL}"
 
           {
-            echo "## Allure Report"
+            echo "## one-page-form-tests-java Tests"
             echo ""
             echo "- Branch: \`${{ env.BRANCH_SLUG }}\`"
             if [ "${{ env.SELENOID_MODE }}" = "true" ]; then
@@ -338,8 +359,20 @@ jobs:
             if [ -n "${VIDEO_URL:-}" ]; then
               echo "- Selenoid video: \`${VIDEO_URL}\`"
             fi
+            if [ "${QUALITY_GATE_EXIT:-}" = "0" ]; then
+              echo "- Allure 3 quality gate: passed (\`maxFailures: 0\`)"
+            elif [ -n "${QUALITY_GATE_EXIT:-}" ]; then
+              echo "- Allure 3 quality gate: **failed** (exit ${QUALITY_GATE_EXIT})"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Fail job if tests failed
-        if: always() && env.TEST_EXIT != '0'
-        run: exit "${{ env.TEST_EXIT }}"
+      - name: Fail if tests or quality gate failed
+        if: >-
+          always() &&
+          (env.TEST_EXIT != '0' ||
+           (env.QUALITY_GATE_EXIT != '' && env.QUALITY_GATE_EXIT != '0'))
+        run: |
+          if [ "${TEST_EXIT}" != "0" ]; then
+            exit "${TEST_EXIT}"
+          fi
+          exit "${QUALITY_GATE_EXIT}"
