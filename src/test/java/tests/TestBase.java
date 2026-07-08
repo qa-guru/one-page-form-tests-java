@@ -11,10 +11,7 @@ import pages.LogedInPage;
 import io.qameta.allure.selenide.AllureSelenide;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.chrome.ChromeOptions;
-
-import java.util.Map;
 
 import static com.codeborne.selenide.Selenide.closeWebDriver;
 
@@ -36,15 +33,9 @@ public class TestBase {
 
         if (!config.remoteUrl().isBlank()) {
             Configuration.remote = config.remoteUrl();
-            var capabilities = new MutableCapabilities();
-            capabilities.setCapability("selenoid:options", Map.of(
-                    "enableVNC", config.enableVnc(),
-                    "enableVideo", config.enableVideo(),
-                    "enableHar", config.enableHar(),
-                    "headless", config.headless()
-            ));
-            Configuration.browserCapabilities = capabilities;
-        } else if (config.headless()) {
+        }
+
+        if (config.headless()) {
             Configuration.browserCapabilities = new ChromeOptions()
                     .addArguments("--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage");
         }
@@ -66,17 +57,10 @@ public class TestBase {
             Attachments.pageSource();
         }
 
-        if (config.attachHarLogs()) {
-            Attachments.harLogs();
-        }
-
         if (config.attachLastScreenshot()) {
             Attachments.screenshot("Last screenshot");
         }
 
-        if (config.enableVideo()) {
-            Attachments.video();
-        }
         if (config.closeBrowserAfterEach()) {
             closeWebDriver();
         }   

@@ -11,7 +11,7 @@ tags: [allure, quality-gate, ci, analytics]
 
 ## Файлы
 
-`allurerc.json` (`qualityGate`, `knownIssuesPath`), `known.json`, Gradle task `allureQualityGate` в `build.gradle`, CI — `.github/workflows/selenoid-autotests-cloud_github.yml`.
+`allurerc.json` (`qualityGate`, `knownIssuesPath`), `known.json`, Gradle task `allureQualityGate` в `build.gradle`, CI — `.github/workflows/one-page-form_prod.yml`.
 
 ## Входы
 
