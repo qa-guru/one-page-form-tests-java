@@ -222,6 +222,7 @@ jobs:
           cp allure-shell.css pages/
           cp allure-shell.js pages/
           cp dashboard-overrides.css pages/
+          cp dashboard-overrides.js pages/
           cp allure-report-logo.svg pages/
           cp pages-templates/root-index.html pages/index.html
           touch pages/.nojekyll
@@ -253,6 +254,11 @@ jobs:
           fi
 
           bash .github/scripts/optimize-allure-pages.sh pages/allure-reports "${{ env.ALLURE_RUNS_RETENTION }}"
+
+          bash .github/scripts/prepare-allure-pages-colors.sh pages "${REPORT_DIR}"
+          if [ -d "${LANDING_DIR}/dashboard" ]; then
+            node .github/scripts/inject-allure-pyramid-colors.mjs pages "${LANDING_DIR}/dashboard"
+          fi
 
       - name: Generate overview dashboard
         if: always()
